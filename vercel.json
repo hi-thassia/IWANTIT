@@ -5,6 +5,7 @@
   "buildCommand": "npm run build -w @iwantit/web",
   "outputDirectory": "apps/web/dist",
   "rewrites": [
+    { "source": "/api/:path*", "destination": "https://iwantit-api.onrender.com/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
