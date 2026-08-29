@@ -19,7 +19,8 @@ COPY apps/web/package.json apps/web/package.json
 COPY packages/shared/package.json packages/shared/package.json
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=build /app/apps/api/dist apps/api/dist
+COPY --from=build /app/apps/api/drizzle apps/api/drizzle
 COPY --from=build /app/packages/shared/dist packages/shared/dist
 USER node
 EXPOSE 3333
-CMD ["node", "apps/api/dist/server.js"]
+CMD ["sh", "-c", "npm run db:migrate:prod -w @iwantit/api && node apps/api/dist/server.js"]
