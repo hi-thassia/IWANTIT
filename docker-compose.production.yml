@@ -1,0 +1,76 @@
+name: iwantit-production
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?configure POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:?configure POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?configure POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+      target: build
+    command: npm run db:migrate -w @iwantit/api
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?configure DATABASE_URL with URL-encoded credentials and host postgres}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_HOST: 0.0.0.0
+      API_PORT: 3333
+      DATABASE_URL: ${DATABASE_URL:?configure DATABASE_URL with URL-encoded credentials and host postgres}
+      WEB_ORIGIN: ${PUBLIC_WEB_ORIGIN:?configure PUBLIC_WEB_ORIGIN}
+      PASSWORD_RESET_URL: ${PUBLIC_WEB_ORIGIN}/redefinir-senha
+      TWO_FACTOR_ENCRYPTION_KEY: ${TWO_FACTOR_ENCRYPTION_KEY:?configure TWO_FACTOR_ENCRYPTION_KEY}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?configure GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?configure GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: ${PUBLIC_WEB_ORIGIN}/api/auth/google/callback
+      GOOGLE_OAUTH_SUCCESS_URL: ${PUBLIC_WEB_ORIGIN}/app
+      GOOGLE_OAUTH_ERROR_URL: ${PUBLIC_WEB_ORIGIN}/entrar
+      SMTP_HOST: ${SMTP_HOST:?configure SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:?configure SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:?configure SMTP_PASSWORD}
+      SMTP_FROM: ${SMTP_FROM:?configure SMTP_FROM}
+      MERCADO_LIVRE_ACCESS_TOKEN: ${MERCADO_LIVRE_ACCESS_TOKEN:-}
+      MONITORING_ENABLED: ${MONITORING_ENABLED:-true}
+      MONITORING_INTERVAL_MINUTES: ${MONITORING_INTERVAL_MINUTES:-30}
+      MONITORING_BATCH_SIZE: ${MONITORING_BATCH_SIZE:-50}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_started
+
+volumes:
+  postgres_data:

@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD CONSTRAINT "users_two_factor_secret_present" CHECK ("users"."two_factor_enabled" = false or "users"."two_factor_secret_encrypted" is not null);

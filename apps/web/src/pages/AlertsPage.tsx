@@ -1,0 +1,18 @@
+import type { AlertView } from '@iwantit/shared';
+import { BellRing, CheckCheck, ExternalLink, Heart, TrendingDown } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { AppHeader } from '@/components/layout/AppHeader';
+import { Alert, Button, Card, Container, Loading } from '@/components/ui';
+import { api, ApiRequestError } from '@/lib/api';
+
+export function AlertsPage() {
+  const [alerts, setAlerts] = useState<AlertView[]>([]); const [unread, setUnread] = useState(0); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [saving, setSaving] = useState('');
+  async function load() { try { const result = await api<{ alerts: AlertView[]; unreadCount: number }>('/api/alerts'); setAlerts(result.alerts); setUnread(result.unreadCount); } catch (cause) { setError(message(cause)); } finally { setLoading(false); } }
+  useEffect(() => { void load(); }, []);
+  async function read(item: AlertView) { if (item.readAt) return; setSaving(item.id); try { await api(`/api/alerts/${item.id}/read`, { method: 'PATCH' }); await load(); } catch (cause) { setError(message(cause)); } finally { setSaving(''); } }
+  async function readAll() { setSaving('all'); try { await api('/api/alerts/read-all', { method: 'PATCH' }); await load(); } catch (cause) { setError(message(cause)); } finally { setSaving(''); } }
+  return <main className="dashboard-page"><AppHeader /><Container className="alerts-content"><div className="alerts-heading"><div><span className="section-kicker">Oportunidades</span><h1>Alertas</h1><p>{unread ? `${unread} alerta(s) não lido(s).` : 'Você está em dia com seus alertas.'}</p></div>{unread > 0 && <Button variant="secondary" loading={saving === 'all'} onClick={readAll}><CheckCheck aria-hidden="true" /> Marcar todos como lidos</Button>}</div>{error && <Alert variant="danger" title="Não foi possível concluir">{error}</Alert>}{loading ? <Loading label="Carregando alertas" /> : alerts.length ? <div className="alert-center-list">{alerts.map((item) => <Card key={item.id} className={`notification-card${item.readAt ? '' : ' is-unread'}`}><button className="notification-card__content" type="button" disabled={Boolean(item.readAt) || saving === item.id} onClick={() => read(item)}><span className="notification-card__icon">{item.type === 'back_in_stock' ? <BellRing aria-hidden="true" /> : <TrendingDown aria-hidden="true" />}</span><span className="notification-card__copy"><span className="notification-card__meta">{item.readAt ? 'Lido' : 'Novo'} · {dateTime(item.createdAt)}</span><strong>{item.title}</strong><span>{item.message}</span></span></button><div className="notification-card__actions">{item.wishId && <Button asChild variant="ghost" size="sm"><Link to={`/desejos/${item.wishId}`}><Heart aria-hidden="true" /> Ver desejo</Link></Button>}{item.offerUrl && <Button asChild variant="ghost" size="sm"><a href={item.offerUrl} target="_blank" rel="noreferrer"><ExternalLink aria-hidden="true" /> Abrir oferta</a></Button>}</div></Card>)}</div> : <Card className="alerts-empty"><BellRing aria-hidden="true" /><h2>Nenhum alerta por enquanto</h2><p>Quando o monitoramento encontrar uma condição configurada, ela aparecerá aqui.</p><Button asChild><Link to="/desejos">Ver meus desejos</Link></Button></Card>}</Container></main>;
+}
+function message(cause: unknown) { return cause instanceof ApiRequestError ? cause.message : 'Tente novamente em alguns instantes.'; }
+function dateTime(value: string) { return new Date(value).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); }

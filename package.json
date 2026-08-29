@@ -1,0 +1,17 @@
+{
+  "name": "iwantit",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "npm@11.6.2",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "concurrently -n web,api -c magenta,cyan \"npm run dev -w @iwantit/web\" \"npm run dev -w @iwantit/api\"",
+    "build": "npm run build -w @iwantit/shared && npm run build -w @iwantit/web && npm run build -w @iwantit/api",
+    "test": "npm run test -w @iwantit/web && npm run test -w @iwantit/api",
+    "test:e2e": "npm run test:e2e -w @iwantit/web",
+    "typecheck": "npm run typecheck -w @iwantit/shared && npm run typecheck -w @iwantit/web && npm run typecheck -w @iwantit/api",
+    "check": "npm run typecheck && npm test && npm run build"
+  },
+  "devDependencies": { "concurrently": "^9.2.1" },
+  "engines": { "node": ">=22" }
+}

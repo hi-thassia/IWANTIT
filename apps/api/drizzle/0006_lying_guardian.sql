@@ -1,0 +1,1 @@
+ALTER TABLE "wishes" ADD COLUMN "alert_type" "alert_type" DEFAULT 'price_target' NOT NULL;
