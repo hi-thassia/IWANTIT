@@ -33,10 +33,14 @@ const envSchema = z.object({
 export const env = envSchema.parse(process.env);
 
 if (env.NODE_ENV === 'production' && !process.env.DATABASE_URL) throw new Error('DATABASE_URL is required in production');
-if (env.NODE_ENV === 'production' && (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET)) throw new Error('GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are required in production');
-if (env.NODE_ENV === 'production' && (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASSWORD)) throw new Error('SMTP_HOST, SMTP_USER and SMTP_PASSWORD are required in production');
 if (env.NODE_ENV === 'production') {
-  for (const [name, value] of [['WEB_ORIGIN', env.WEB_ORIGIN], ['PASSWORD_RESET_URL', env.PASSWORD_RESET_URL], ['GOOGLE_REDIRECT_URI', env.GOOGLE_REDIRECT_URI], ['GOOGLE_OAUTH_SUCCESS_URL', env.GOOGLE_OAUTH_SUCCESS_URL], ['GOOGLE_OAUTH_ERROR_URL', env.GOOGLE_OAUTH_ERROR_URL]] as const) {
+  for (const [name, value] of [['WEB_ORIGIN', env.WEB_ORIGIN], ['PASSWORD_RESET_URL', env.PASSWORD_RESET_URL]] as const) {
     if (new URL(value).protocol !== 'https:') throw new Error(`${name} must use HTTPS in production`);
+  }
+  if (env.GOOGLE_CLIENT_ID || env.GOOGLE_CLIENT_SECRET) {
+    if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) throw new Error('Configure both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET');
+    for (const [name, value] of [['GOOGLE_REDIRECT_URI', env.GOOGLE_REDIRECT_URI], ['GOOGLE_OAUTH_SUCCESS_URL', env.GOOGLE_OAUTH_SUCCESS_URL], ['GOOGLE_OAUTH_ERROR_URL', env.GOOGLE_OAUTH_ERROR_URL]] as const) {
+      if (new URL(value).protocol !== 'https:') throw new Error(`${name} must use HTTPS in production`);
+    }
   }
 }

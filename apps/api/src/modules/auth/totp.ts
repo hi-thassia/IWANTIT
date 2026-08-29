@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { env } from '../../config/env.js';
 
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -49,8 +49,9 @@ export function validateTwoFactorConfiguration() { void encryptionKey(); }
 function encryptionKey() {
   if (env.TWO_FACTOR_ENCRYPTION_KEY) {
     const key = Buffer.from(env.TWO_FACTOR_ENCRYPTION_KEY, 'base64');
-    if (key.length !== 32) throw new Error('TWO_FACTOR_ENCRYPTION_KEY must decode to exactly 32 bytes');
-    return key;
+    if (key.length === 32) return key;
+    if (env.TWO_FACTOR_ENCRYPTION_KEY.length >= 32) return createHash('sha256').update(env.TWO_FACTOR_ENCRYPTION_KEY).digest();
+    throw new Error('TWO_FACTOR_ENCRYPTION_KEY must be a 32-byte base64 key or a secret with at least 32 characters');
   }
   if (env.NODE_ENV === 'production') throw new Error('TWO_FACTOR_ENCRYPTION_KEY is required in production');
   developmentKey ??= randomBytes(32);

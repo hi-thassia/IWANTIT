@@ -58,9 +58,7 @@ Consulte [.env.example](.env.example). Em produção são obrigatórias:
 
 - `DATABASE_URL`
 - `PUBLIC_WEB_ORIGIN` no Compose e `WEB_ORIGIN` na API
-- `TWO_FACTOR_ENCRYPTION_KEY`, base64 de exatamente 32 bytes
-- `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`
-- `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD` e `SMTP_FROM`
+- `TWO_FACTOR_ENCRYPTION_KEY`, base64 de 32 bytes ou segredo aleatório com pelo menos 32 caracteres
 
 Todas as URLs públicas de autenticação e recuperação devem usar HTTPS em produção. Gere a chave 2FA com:
 
@@ -73,8 +71,8 @@ Não versione `.env`, credenciais, tokens OAuth, SMTP ou marketplace. Rotacione 
 ## Integrações externas
 
 - Mercado Livre: requer `MERCADO_LIVRE_ACCESS_TOKEN`; usa API oficial.
-- Google Login: requer cliente OAuth Web, tela de consentimento e redirect URI HTTPS cadastrada.
-- Recuperação de senha: requer SMTP em produção.
+- Google Login: integração opcional; requer `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`, cliente OAuth Web, tela de consentimento e redirect URI HTTPS cadastrada. Sem essas credenciais, a API permanece operacional e informa que o login Google está indisponível.
+- Recuperação de senha: integração opcional; o envio de e-mail requer SMTP em produção. Sem SMTP, a solicitação continua retornando uma resposta genérica, mas nenhum e-mail é enviado.
 - Shopee e SHEIN: abstrações registradas, mas indisponíveis até existir acesso oficial/autorizado. Não há scraping, bypass de CAPTCHA ou resultados falsos.
 
 Frete desconhecido permanece `null`; preço total não é inventado. Similaridade visual avançada não faz parte deste MVP.

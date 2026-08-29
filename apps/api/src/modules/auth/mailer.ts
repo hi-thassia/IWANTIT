@@ -30,14 +30,17 @@ export class DevelopmentPasswordResetMailer implements PasswordResetMailer {
   }
 }
 
+export class UnavailablePasswordResetMailer implements PasswordResetMailer {
+  async sendPasswordReset() { throw new Error('Password reset e-mail is unavailable because SMTP is not configured'); }
+}
+
 function escapeHtml(value: string) {
   return value.replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]!);
 }
 
 export function createPasswordResetMailer(): PasswordResetMailer {
   if (env.NODE_ENV === 'production') {
-    if (!env.SMTP_HOST) throw new Error('SMTP_HOST is required in production');
-    return new SmtpPasswordResetMailer();
+    return env.SMTP_HOST ? new SmtpPasswordResetMailer() : new UnavailablePasswordResetMailer();
   }
   return new DevelopmentPasswordResetMailer();
 }
