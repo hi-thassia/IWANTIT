@@ -18,7 +18,7 @@ const marketplaces: Array<{ marketplace: Marketplace; name: string; hosts: strin
 ];
 
 export class ProductImportService {
-  constructor(private readonly http: HttpClient = fetch) {}
+  constructor(private readonly http: HttpClient = fetch, private readonly accessToken?: string) {}
 
   async import(rawUrl: string): Promise<ProductImportResult> {
     const url = safeMarketplaceUrl(rawUrl);
@@ -66,7 +66,7 @@ export class ProductImportService {
 
   private async officialJson<T>(url: string, failureMessage: string): Promise<T> {
     let response: Response;
-    try { response = await this.http(url, { headers: { Accept: 'application/json' }, redirect: 'error', signal: AbortSignal.timeout(8_000) }); }
+    try { response = await this.http(url, { headers: { Accept: 'application/json', ...(this.accessToken ? { Authorization: `Bearer ${this.accessToken}` } : {}) }, redirect: 'error', signal: AbortSignal.timeout(8_000) }); }
     catch { throw new AuthError(502, failureMessage || 'Falha ao consultar um dado complementar.'); }
     if (!response.ok) {
       if (response.status === 404) throw new AuthError(404, 'O anúncio não foi encontrado ou não está mais disponível.');
