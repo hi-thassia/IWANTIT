@@ -91,6 +91,17 @@ O serviço web fica na porta `WEB_PORT` (8080 por padrão), serve a SPA, encamin
 
 Antes de atualizar produção, faça backup do PostgreSQL. Para rollback de aplicação, mantenha a imagem anterior; migrations destrutivas devem sempre ter um plano específico de reversão.
 
+## Render com Supabase
+
+O `render.yaml` publica somente a API. O PostgreSQL é externo e a variável secreta `DATABASE_URL` deve ser configurada diretamente no painel do Render.
+
+1. Crie um projeto no Supabase e defina uma senha forte para o banco.
+2. No projeto, abra **Connect** e copie a URI do **Session pooler** (porta `5432`). Esse modo é indicado para uma API persistente quando a infraestrutura de origem precisa de IPv4.
+3. No serviço `iwantit-api` do Render, configure `DATABASE_URL` com a URI completa, substituindo o marcador de senha. Não coloque essa URI no GitHub.
+4. Faça um novo deploy. O container executa todas as migrations antes de iniciar a API.
+
+O Supabase é usado apenas como PostgreSQL nesta versão. Autenticação, autorização e isolamento dos dados continuam na API do I Want It; nenhuma chave `anon` ou `service_role` deve ser enviada ao frontend.
+
 ## Operação
 
 - `MONITORING_ENABLED=true` ativa o scheduler.
